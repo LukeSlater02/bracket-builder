@@ -27,6 +27,104 @@
             line-height: 1.6;
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        .modal-matchup {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-item {
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .modal-item:hover {
+            border-color: var(--secondary);
+            background-color: #f0f7ff;
+        }
+
+        .modal-item-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .modal-item-image {
+            max-width: 100%;
+            max-height: 700px;
+            object-fit: contain;
+            margin: 10px 0;
+        }
+
+        .modal-vs {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+
+        .modal-progress {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+        }
+
+        /* Additional button styles */
+        .play-button {
+            padding: 12px 20px;
+            font-size: 18px;
+            margin-bottom: 20px;
+            background-color: var(--secondary);
+        }
+
         .item-thumbnail {
             width: 40px;
             height: 40px;
@@ -371,6 +469,21 @@
             <p>Create a tournament bracket to rank your favorite items</p>
         </header>
 
+        <div id="matchupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalRoundTitle">Round 1</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-matchup" id="modalMatchup">
+                    <!-- Content will be dynamically inserted here -->
+                </div>
+                <div class="modal-progress">
+                    <span id="modalProgress">Match 1/8</span>
+                </div>
+            </div>
+        </div>
+
         <div class="tab-container">
             <div class="tabs">
                 <div class="tab active" data-tab="setup">Setup</div>
@@ -397,16 +510,24 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="bracketSize">Bracket Size</label>
-                            <select id="bracketSize">
-                                <option value="4">4 Items</option>
-                                <option value="8">8 Items</option>
-                                <option value="16">16 Items</option>
-                                <option value="32">32 Items</option>
-                                <option value="64">64 Items</option>
-                                <option value="128">128 Items</option>
-                                <option value="256">256 Items (closest to 260)</option>
-                            </select>
+                            <label for="bracketSizeControl">Bracket Size</label>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="bracketSizeSelect" style="flex: 1;">
+                                    <option value="4">4 Items</option>
+                                    <option value="8">8 Items</option>
+                                    <option value="16" selected>16 Items</option>
+                                    <option value="32">32 Items</option>
+                                    <option value="64">64 Items</option>
+                                    <option value="128">128 Items</option>
+                                    <option value="256">256 Items</option>
+                                    <option value="custom">Custom Size...</option>
+                                </select>
+                                <input type="number" id="customBracketSize" min="2" max="1024" placeholder="Enter size"
+                                    style="flex: 1; display: none;">
+                            </div>
+                            <small id="bracketSizeHelp" style="display: block; margin-top: 5px; color: #666;">
+                                Custom sizes will be rounded up to the next power of 2.
+                            </small>
                         </div>
 
                         <div class="form-group">
@@ -525,6 +646,23 @@
             winnerDisplay: document.getElementById('winnerDisplay'),
             resultsTable: document.getElementById('resultsTable').querySelector('tbody')
         };
+        elements.matchupModal = document.getElementById('matchupModal');
+        elements.modalMatchup = document.getElementById('modalMatchup');
+        elements.modalRoundTitle = document.getElementById('modalRoundTitle');
+        elements.modalProgress = document.getElementById('modalProgress');
+        elements.closeModal = document.querySelector('.close-modal');
+        elements.bracketSizeSelect = document.getElementById('bracketSizeSelect');
+        elements.customBracketSize = document.getElementById('customBracketSize');
+        elements.bracketSizeHelp = document.getElementById('bracketSizeHelp');
+        // Add this event listener to toggle between select and custom input
+        elements.bracketSizeSelect.addEventListener('change', function () {
+            if (this.value === 'custom') {
+                elements.customBracketSize.style.display = 'block';
+                elements.customBracketSize.focus();
+            } else {
+                elements.customBracketSize.style.display = 'none';
+            }
+        });
 
         // Tab functionality
         elements.tabs.forEach(tab => {
@@ -680,7 +818,16 @@
             // Get tournament settings
             tournamentData.name = elements.tournamentName.value || "Ultimate Item Tournament";
             tournamentData.seeding = elements.seedingMethod.value;
-            tournamentData.bracketSize = parseInt(elements.bracketSize.value);
+
+            // Handle custom bracket size
+            if (elements.bracketSizeSelect.value === 'custom' && elements.customBracketSize.value) {
+                // Get custom size and ensure it's at least 2
+                let customSize = Math.max(2, parseInt(elements.customBracketSize.value));
+                // Round up to the next power of 2
+                tournamentData.bracketSize = Math.pow(2, Math.ceil(Math.log2(customSize)));
+            } else {
+                tournamentData.bracketSize = parseInt(elements.bracketSizeSelect.value);
+            }
 
             // Update required count
             elements.requiredCount.textContent = tournamentData.bracketSize;
@@ -1118,7 +1265,17 @@
                     // Update UI elements with saved data
                     elements.tournamentName.value = tournamentData.name;
                     elements.seedingMethod.value = tournamentData.seeding;
-                    elements.bracketSize.value = tournamentData.bracketSize;
+
+                    // Handle custom bracket size
+                    const standardSizes = [4, 8, 16, 32, 64, 128, 256];
+                    if (standardSizes.includes(tournamentData.bracketSize)) {
+                        elements.bracketSizeSelect.value = tournamentData.bracketSize;
+                        elements.customBracketSize.style.display = 'none';
+                    } else {
+                        elements.bracketSizeSelect.value = 'custom';
+                        elements.customBracketSize.value = tournamentData.bracketSize;
+                        elements.customBracketSize.style.display = 'block';
+                    }
 
                     // Update item list
                     updateItemList();
@@ -1139,7 +1296,7 @@
         // Initialize on page load
         function initialize() {
             // Update bracket size display
-            tournamentData.bracketSize = parseInt(elements.bracketSize.value);
+            tournamentData.bracketSize = parseInt(elements.bracketSizeSelect.value);
             elements.requiredCount.textContent = tournamentData.bracketSize;
 
             // Add keypress event for item input
@@ -1149,9 +1306,226 @@
                 }
             });
 
+            // Add keypress event for custom bracket size input
+            elements.customBracketSize.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.generateBracketBtn.click();
+                }
+            });
+
             // Check for saved data
             loadSavedTournament();
         }
+
+        // Add a "Play Tournament" button to the bracket tab
+        function addPlayButton() {
+            const playButton = document.createElement('button');
+            playButton.id = 'playTournamentBtn';
+            playButton.className = 'play-button';
+            playButton.textContent = 'Play Tournament';
+            playButton.addEventListener('click', startTournamentPlay);
+
+            // Insert before the reset button
+            elements.resetBracketBtn.parentNode.insertBefore(playButton, elements.resetBracketBtn);
+        }
+
+        // Current position in the tournament play mode
+        let tournamentPlayState = {
+            currentRoundIndex: 0,
+            currentMatchIndex: 0,
+            active: false
+        };
+
+        // Start the tournament play mode
+        function startTournamentPlay() {
+            // Find the first incomplete match
+            let foundIncomplete = false;
+
+            for (let r = 0; r < tournamentData.bracket.length; r++) {
+                for (let m = 0; m < tournamentData.bracket[r].length; m++) {
+                    const match = tournamentData.bracket[r][m];
+
+                    // Skip matches where both teams aren't ready
+                    if (!match.team1 || !match.team2) continue;
+
+                    // If match doesn't have a winner yet, start here
+                    if (!match.winner) {
+                        tournamentPlayState.currentRoundIndex = r;
+                        tournamentPlayState.currentMatchIndex = m;
+                        foundIncomplete = true;
+                        break;
+                    }
+                }
+                if (foundIncomplete) break;
+            }
+
+            // If all matches are completed, start over
+            if (!foundIncomplete) {
+                if (confirm('All matches are already completed. Reset the bracket and start over?')) {
+                    tournamentData.currentRound = 0;
+                    tournamentData.matchesCompleted = 0;
+                    initializeBracket();
+                    renderBracket();
+                    updateProgress();
+
+                    tournamentPlayState.currentRoundIndex = 0;
+                    tournamentPlayState.currentMatchIndex = 0;
+                } else {
+                    return;
+                }
+            }
+
+            // Set play mode as active
+            tournamentPlayState.active = true;
+
+            // Show the current matchup
+            showCurrentMatchup();
+        }
+
+        // Display the current matchup in the modal
+        function showCurrentMatchup() {
+            const currentRound = tournamentData.bracket[tournamentPlayState.currentRoundIndex];
+            if (!currentRound) return;
+
+            const currentMatch = currentRound[tournamentPlayState.currentMatchIndex];
+            if (!currentMatch || !currentMatch.team1 || !currentMatch.team2) {
+                findNextMatchup();
+                return;
+            }
+
+            // Set round title
+            if (tournamentPlayState.currentRoundIndex === tournamentData.bracket.length - 1) {
+                elements.modalRoundTitle.textContent = 'Championship';
+            } else if (tournamentPlayState.currentRoundIndex === tournamentData.bracket.length - 2) {
+                elements.modalRoundTitle.textContent = 'Finals';
+            } else if (tournamentPlayState.currentRoundIndex === tournamentData.bracket.length - 3) {
+                elements.modalRoundTitle.textContent = 'Semifinals';
+            } else if (tournamentPlayState.currentRoundIndex === 0) {
+                elements.modalRoundTitle.textContent = 'First Round';
+            } else {
+                elements.modalRoundTitle.textContent = `Round ${tournamentPlayState.currentRoundIndex + 1}`;
+            }
+
+            // Set progress text
+            elements.modalProgress.textContent = `Match ${tournamentPlayState.currentMatchIndex + 1}/${currentRound.length}`;
+
+            // Build the matchup UI
+            elements.modalMatchup.innerHTML = '';
+
+            // Team 1
+            const team1El = document.createElement('div');
+            team1El.className = 'modal-item';
+            team1El.onclick = () => {
+                selectWinner(currentMatch.id, currentMatch.team1);
+                findNextMatchup();
+            };
+
+            let team1Content = `<div class="modal-item-title"><span class="seed">${currentMatch.team1.seed}</span> ${currentMatch.team1.title}</div>`;
+            if (currentMatch.team1.imageUrl) {
+                team1Content += `<img src="${currentMatch.team1.imageUrl}" alt="${currentMatch.team1.title}" class="modal-item-image">`;
+            }
+            team1El.innerHTML = team1Content;
+
+            // VS divider
+            const vsEl = document.createElement('div');
+            vsEl.className = 'modal-vs';
+            vsEl.textContent = 'VS';
+
+            // Team 2
+            const team2El = document.createElement('div');
+            team2El.className = 'modal-item';
+            team2El.onclick = () => {
+                selectWinner(currentMatch.id, currentMatch.team2);
+                findNextMatchup();
+            };
+
+            let team2Content = `<div class="modal-item-title"><span class="seed">${currentMatch.team2.seed}</span> ${currentMatch.team2.title}</div>`;
+            if (currentMatch.team2.imageUrl) {
+                team2Content += `<img src="${currentMatch.team2.imageUrl}" alt="${currentMatch.team2.title}" class="modal-item-image">`;
+            }
+            team2El.innerHTML = team2Content;
+
+            // Add all elements to the modal
+            elements.modalMatchup.appendChild(team1El);
+            elements.modalMatchup.appendChild(vsEl);
+            elements.modalMatchup.appendChild(team2El);
+
+            // Show the modal
+            elements.matchupModal.style.display = 'block';
+        }
+
+        // Find the next available matchup
+        function findNextMatchup() {
+            let foundNext = false;
+
+            // Start from current position
+            let r = tournamentPlayState.currentRoundIndex;
+            let m = tournamentPlayState.currentMatchIndex + 1;
+
+            while (r < tournamentData.bracket.length) {
+                // Reset match index when moving to next round
+                if (m >= tournamentData.bracket[r].length) {
+                    r++;
+                    m = 0;
+                    continue;
+                }
+
+                const match = tournamentData.bracket[r][m];
+
+                // Skip matches where both teams aren't ready or already have a winner
+                if (match && match.team1 && match.team2 && !match.winner) {
+                    tournamentPlayState.currentRoundIndex = r;
+                    tournamentPlayState.currentMatchIndex = m;
+                    foundNext = true;
+                    break;
+                }
+
+                m++;
+            }
+
+            if (foundNext) {
+                // Show the next matchup
+                showCurrentMatchup();
+            } else {
+                // Tournament complete
+                tournamentPlayState.active = false;
+                closeModal();
+
+                // If all matches are complete, prepare results
+                if (tournamentData.matchesCompleted === tournamentData.totalMatches) {
+                    prepareResults();
+                    // Switch to results tab
+                    document.querySelector('.tab[data-tab="results"]').click();
+                }
+            }
+        }
+
+        // Close the modal
+        function closeModal() {
+            elements.matchupModal.style.display = 'none';
+        }
+
+        // Set up event listeners for the modal
+        elements.closeModal.addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === elements.matchupModal) {
+                closeModal();
+            }
+        });
+
+        // Call this to add the play button after initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            addPlayButton();
+        });
+
+        // Add the play button when bracket is generated
+        const originalGenerateBracket = generateBracket;
+        generateBracket = function () {
+            originalGenerateBracket();
+            if (!document.getElementById('playTournamentBtn')) {
+                addPlayButton();
+            }
+        };
 
         // Run initialization
         initialize();

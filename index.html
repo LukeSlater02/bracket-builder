@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Tournament Bracket</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .item-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            margin-left: 10px;
+            border-radius: 4px;
+        }
+
+        .item-image-container {
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .item-image {
+            max-width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .item-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item {
+            padding: 10px;
+            background: white;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .tab-container {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--primary);
+        }
+
+        .tab {
+            padding: 15px 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: var(--secondary);
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 25px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .setup-section {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        textarea {
+            height: 200px;
+            font-family: inherit;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--primary);
+        }
+
+        .item-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            background: white;
+        }
+
+        .item-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .item-item:last-child {
+            border-bottom: none;
+        }
+
+        .remove-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: auto;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .bracket-container {
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .bracket {
+            display: flex;
+            min-width: max-content;
+        }
+
+        .round {
+            display: flex;
+            flex-direction: column;
+            margin-right: 40px;
+            min-width: 250px;
+        }
+
+        .round-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 5px;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+        }
+
+        .matchup {
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .matchup-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+            margin-bottom: 5px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .item:hover {
+            background: #f0f7ff;
+        }
+
+        .item.winner {
+            background: #e6ffe6;
+            border-color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .match-connector {
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            width: 20px;
+            border-top: 2px solid #aaa;
+        }
+
+        .vertical-connector {
+            position: absolute;
+            right: -20px;
+            height: calc(50% + 30px);
+            width: 2px;
+            background: #aaa;
+        }
+
+        .top-connector {
+            top: 50%;
+        }
+
+        .bottom-connector {
+            bottom: 50%;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #ddd;
+            margin: 20px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--secondary);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .controls {
+            gap: 10px;
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        thead {
+            background: var(--primary);
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .final-winner {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            background: #e6ffe6;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            font-size: 24px;
+        }
+
+        .seed {
+            color: #777;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Item Tournament Bracket</h1>
+            <p>Create a tournament bracket to rank your favorite items</p>
+        </header>
+
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="setup">Setup</div>
+                <div class="tab" data-tab="bracket">Bracket</div>
+                <div class="tab" data-tab="results">Results</div>
+            </div>
+
+            <div class="tab-content active" id="setup">
+                <div class="setup-grid">
+                    <div class="setup-section">
+                        <h2>Tournament Settings</h2>
+                        <div class="form-group">
+                            <label for="tournamentName">Tournament Name</label>
+                            <input type="text" id="tournamentName" placeholder="Ultimate Item Tournament"
+                                value="Ultimate Item Tournament">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="seedingMethod">Seeding Method</label>
+                            <select id="seedingMethod">
+                                <option value="random">Random</option>
+                                <option value="manual">Manual (by order entered)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bracketSize">Bracket Size</label>
+                            <select id="bracketSize">
+                                <option value="4">4 Items</option>
+                                <option value="8">8 Items</option>
+                                <option value="16">16 Items</option>
+                                <option value="32">32 Items</option>
+                                <option value="64">64 Items</option>
+                                <option value="128">128 Items</option>
+                                <option value="256">256 Items (closest to 260)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <button id="generateBracketBtn">Generate Bracket</button>
+                        </div>
+                    </div>
+
+                    <div class="setup-section">
+                        <h2>Add Items</h2>
+                        <div class="form-group">
+                            <label for="itemInput">Item Title</label>
+                            <input type="text" id="itemInput" placeholder="Enter a item title">
+                            <button id="addItemBtn" style="margin-top: 10px;">Add Item</button>
+                        </div>
+
+                        <!-- Add this to the "Add Items" section, after the item title input -->
+                        <div class="form-group">
+                            <label for="itemImageUrl">Item Image URL (optional)</label>
+                            <input type="text" id="itemImageUrl" placeholder="https://example.com/item-poster.jpg">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bulkItemInput">Bulk Add Items (Format: Item Title - Image URL, one per
+                                line)</label>
+                            <textarea id="bulkItemInput"
+                                placeholder="The Godfather=https://example.com/godfather.jpg&#10;Pulp Fiction&#10;The Shawshank Redemption=https://example.com/shawshank.jpg"></textarea>
+                            <button id="addBulkItemsBtn" style="margin-top: 10px;">Add All Items</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Item List (<span id="itemCount">0</span>/<span id="requiredCount">0</span>)</label>
+                            <div class="item-list" id="itemList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="bracket">
+                <div class="progress-bar">
+                    <div class="progress" id="bracketProgress">0%</div>
+                </div>
+
+                <div class="bracket-container">
+                    <div id="bracketView" class="bracket">
+                        <p>Generate a bracket from the Setup tab first.</p>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="resetBracketBtn">Reset Bracket</button>
+                    <div class="export-options">
+                        <button id="saveBtn">Save Progress</button>
+                        <button id="exportBtn">Export Results</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="results">
+                <div id="winnerDisplay"></div>
+
+                <h2>Final Rankings</h2>
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Item</th>
+                                <th>Rounds Won</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Results will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tournament data structure
+        let tournamentData = {
+            name: "Ultimate Item Tournament",
+            items: [],
+            bracket: [],
+            seeding: "random",
+            bracketSize: 16,
+            currentRound: 0,
+            matchesCompleted: 0,
+            totalMatches: 0,
+            results: []
+        };
+
+        // DOM Elements
+        const elements = {
+            tabs: document.querySelectorAll('.tab'),
+            tabContents: document.querySelectorAll('.tab-content'),
+            itemInput: document.getElementById('itemInput'),
+            addItemBtn: document.getElementById('addItemBtn'),
+            bulkItemInput: document.getElementById('bulkItemInput'),
+            addBulkItemsBtn: document.getElementById('addBulkItemsBtn'),
+            itemList: document.getElementById('itemList'),
+            itemCount: document.getElementById('itemCount'),
+            requiredCount: document.getElementById('requiredCount'),
+            tournamentName: document.getElementById('tournamentName'),
+            itemInput: document.getElementById('itemInput'),
+            itemImageUrl: document.getElementById('itemImageUrl'),
+            seedingMethod: document.getElementById('seedingMethod'),
+            bracketSize: document.getElementById('bracketSize'),
+            generateBracketBtn: document.getElementById('generateBracketBtn'),
+            bracketView: document.getElementById('bracketView'),
+            bracketProgress: document.getElementById('bracketProgress'),
+            resetBracketBtn: document.getElementById('resetBracketBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            exportBtn: document.getElementById('exportBtn'),
+            winnerDisplay: document.getElementById('winnerDisplay'),
+            resultsTable: document.getElementById('resultsTable').querySelector('tbody')
+        };
+
+        // Tab functionality
+        elements.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+
+                // Change active tab
+                elements.tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Show active content
+                elements.tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    }
+                });
+
+                // Special handling for results tab
+                if (tabId === 'results') {
+                    updateResults();
+                }
+            });
+        });
+
+        // Update the event listeners for adding items
+        elements.addItemBtn.addEventListener('click', () => {
+            const itemName = elements.itemInput.value.trim();
+            const imageUrl = elements.itemImageUrl.value.trim();
+            if (itemName) {
+                addItem(itemName, imageUrl);
+                elements.itemInput.value = '';
+                elements.itemImageUrl.value = '';
+                elements.itemInput.focus();
+            }
+        });
+
+        // Update bulk add function
+        elements.addBulkItemsBtn.addEventListener('click', () => {
+            const itemLines = elements.bulkItemInput.value.trim().split('\n');
+            itemLines.forEach(line => {
+                if (line.trim()) {
+                    const parts = line.split('=').map(part => part.trim());
+                    const title = parts[0];
+                    const imageUrl = parts.length > 1 ? parts[1] : '';
+                    addItem(title, imageUrl);
+                }
+            });
+            elements.bulkItemInput.value = '';
+        });
+
+        // Generate bracket
+        elements.generateBracketBtn.addEventListener('click', generateBracket);
+
+        // Reset bracket
+        elements.resetBracketBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the bracket? All progress will be lost.')) {
+                tournamentData.currentRound = 0;
+                tournamentData.matchesCompleted = 0;
+                initializeBracket();
+                renderBracket();
+                updateProgress();
+            }
+        });
+
+        // Save progress
+        elements.saveBtn.addEventListener('click', () => {
+            localStorage.setItem('itemTournament', JSON.stringify(tournamentData));
+            alert('Tournament progress saved!');
+        });
+
+        // Export results
+        elements.exportBtn.addEventListener('click', () => {
+            let resultsText = `${tournamentData.name} - Results\n\n`;
+
+            // Add winner
+            if (tournamentData.bracket[tournamentData.bracket.length - 1][0].winner) {
+                resultsText += `Winner: ${tournamentData.bracket[tournamentData.bracket.length - 1][0].winner.title}\n\n`;
+            }
+
+            // Add all rankings
+            resultsText += "Rankings:\n";
+            tournamentData.results.forEach((item, index) => {
+                resultsText += `${index + 1}. ${item.title} (Rounds Won: ${item.roundsWon})\n`;
+            });
+
+            // Create and trigger download
+            const blob = new Blob([resultsText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${tournamentData.name.replace(/\s+/g, '-')}-results.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Helper Functions
+        function addItem(title, imageUrl = '') {
+            // Check for duplicates
+            if (tournamentData.items.some(item => item.title.toLowerCase() === title.toLowerCase())) {
+                alert(`"${title}" is already in your item list.`);
+                return;
+            }
+
+            // Add item to data
+            tournamentData.items.push({
+                id: Date.now() + Math.random().toString(36).substr(2, 5),
+                title: title,
+                seed: tournamentData.items.length + 1,
+                imageUrl: imageUrl
+            });
+
+            // Update display
+            updateItemList();
+        }
+
+        function updateItemList() {
+            // Clear list
+            elements.itemList.innerHTML = '';
+
+            // Add each item to the list
+            tournamentData.items.forEach(item => {
+                const itemItem = document.createElement('div');
+                itemItem.className = 'item-item';
+
+                let content = `<span>${item.title}</span>`;
+                if (item.imageUrl) {
+                    content += `<img src="${item.imageUrl}" alt="${item.title}" class="item-thumbnail">`;
+                }
+                content += `<button class="remove-btn" data-id="${item.id}">✕</button>`;
+
+                itemItem.innerHTML = content;
+                elements.itemList.appendChild(itemItem);
+            });
+
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    tournamentData.items = tournamentData.items.filter(item => item.id !== id);
+                    updateItemList();
+                });
+            });
+
+            // Update counts
+            elements.itemCount.textContent = tournamentData.items.length;
+            elements.requiredCount.textContent = tournamentData.bracketSize;
+        }
+
+        function generateBracket() {
+            // Get tournament settings
+            tournamentData.name = elements.tournamentName.value || "Ultimate Item Tournament";
+            tournamentData.seeding = elements.seedingMethod.value;
+            tournamentData.bracketSize = parseInt(elements.bracketSize.value);
+
+            // Update required count
+            elements.requiredCount.textContent = tournamentData.bracketSize;
+
+            // Check if we have enough items
+            if (tournamentData.items.length < tournamentData.bracketSize) {
+                alert(`You need ${tournamentData.bracketSize - tournamentData.items.length} more items to create a ${tournamentData.bracketSize}-team bracket.`);
+                return;
+            }
+
+            // Reset tournament progress
+            tournamentData.currentRound = 0;
+            tournamentData.matchesCompleted = 0;
+
+            // Initialize the bracket
+            initializeBracket();
+
+            // Render the bracket
+            renderBracket();
+
+            // Update progress display
+            updateProgress();
+
+            // Switch to bracket tab
+            document.querySelector('.tab[data-tab="bracket"]').click();
+        }
+
+        function initializeBracket() {
+            // Create a copy of items for seeding
+            let items = [...tournamentData.items].slice(0, tournamentData.bracketSize);
+
+            // Apply seeding method
+            if (tournamentData.seeding === "random") {
+                // Fisher-Yates shuffle
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [items[i], items[j]] = [items[j], items[i]];
+                }
+            }
+
+            // Update seed numbers based on new order
+            items.forEach((item, index) => {
+                item.seed = index + 1;
+            });
+
+            // Calculate number of rounds
+            const numRounds = Math.log2(tournamentData.bracketSize);
+
+            // Create bracket structure
+            tournamentData.bracket = [];
+
+            // First round - actual matchups
+            const firstRound = [];
+            for (let i = 0; i < items.length; i += 2) {
+                firstRound.push({
+                    id: `r0m${i / 2}`,
+                    team1: items[i],
+                    team2: i + 1 < items.length ? items[i + 1] : null,
+                    winner: null
+                });
+            }
+            tournamentData.bracket.push(firstRound);
+
+            // Subsequent rounds - empty placeholders
+            for (let round = 1; round < numRounds + 1; round++) {
+                const roundMatches = [];
+                const previousRoundMatchCount = tournamentData.bracket[round - 1].length;
+
+                for (let match = 0; match < previousRoundMatchCount / 2; match++) {
+                    roundMatches.push({
+                        id: `r${round}m${match}`,
+                        team1: null,
+                        team2: null,
+                        winner: null
+                    });
+                }
+
+                tournamentData.bracket.push(roundMatches);
+            }
+
+            // Calculate total matches
+            tournamentData.totalMatches = tournamentData.bracketSize - 1;
+        }
+
+        function renderBracket() {
+            elements.bracketView.innerHTML = '';
+
+            // For each round in the bracket
+            tournamentData.bracket.forEach((round, roundIndex) => {
+                const roundEl = document.createElement('div');
+                roundEl.className = 'round';
+
+                // Round title
+                const roundTitle = document.createElement('div');
+                roundTitle.className = 'round-title';
+
+                if (roundIndex === tournamentData.bracket.length - 1) {
+                    roundTitle.textContent = 'Champion';
+                } else if (roundIndex === tournamentData.bracket.length - 2) {
+                    roundTitle.textContent = 'Finals';
+                } else if (roundIndex === tournamentData.bracket.length - 3) {
+                    roundTitle.textContent = 'Semifinals';
+                } else if (roundIndex === tournamentData.bracket.length - 4) {
+                    roundTitle.textContent = 'Quarterfinals';
+                } else if (roundIndex === 0) {
+                    roundTitle.textContent = 'First Round';
+                } else {
+                    roundTitle.textContent = `Round ${roundIndex + 1}`;
+                }
+
+                roundEl.appendChild(roundTitle);
+
+                // For each matchup in the round
+                round.forEach((match, matchIndex) => {
+                    const matchupContainer = document.createElement('div');
+                    matchupContainer.className = 'matchup-container';
+
+                    const matchup = document.createElement('div');
+                    matchup.className = 'matchup';
+                    matchup.id = match.id;
+
+                    // Team 1
+                    if (match.team1) {
+                        const team1El = document.createElement('div');
+                        team1El.className = 'item';
+                        if (match.winner && match.winner.id === match.team1.id) {
+                            team1El.classList.add('winner');
+                        }
+
+                        let team1Content = `<span class="seed">${match.team1.seed}</span> ${match.team1.title}`;
+                        if (match.team1.imageUrl) {
+                            team1Content += `<div class="item-image-container"><img src="${match.team1.imageUrl}" alt="${match.team1.title}" class="item-image"></div>`;
+                        }
+
+                        team1El.innerHTML = team1Content;
+                        team1El.addEventListener('click', () => selectWinner(match.id, match.team1));
+                        matchup.appendChild(team1El);
+                    } else {
+                        // Empty slot in later rounds
+                        const emptySlot = document.createElement('div');
+                        emptySlot.className = 'movie';
+                        emptySlot.textContent = 'TBD';
+                        matchup.appendChild(emptySlot);
+                    }
+
+                    // Team 2
+                    if (match.team2) {
+                        const team2El = document.createElement('div');
+                        team2El.className = 'item';
+                        if (match.winner && match.winner.id === match.team2.id) {
+                            team2El.classList.add('winner');
+                        }
+
+                        let team2Content = `<span class="seed">${match.team2.seed}</span> ${match.team2.title}`;
+                        if (match.team2.imageUrl) {
+                            team2Content += `<div class="item-image-container"><img src="${match.team2.imageUrl}" alt="${match.team2.title}" class="item-image"></div>`;
+                        }
+
+                        team2El.innerHTML = team2Content;
+                        team2El.addEventListener('click', () => selectWinner(match.id, match.team2));
+                        matchup.appendChild(team2El);
+                    } else if (roundIndex === 0) {
+                        // First round bye
+                        const byeSlot = document.createElement('div');
+                        byeSlot.className = 'item';
+                        byeSlot.textContent = 'BYE';
+                        matchup.appendChild(byeSlot);
+                    } else {
+                        // Empty slot in later rounds
+                        const emptySlot = document.createElement('div');
+                        emptySlot.className = 'item';
+                        emptySlot.textContent = 'TBD';
+                        matchup.appendChild(emptySlot);
+                    }
+
+                    matchupContainer.appendChild(matchup);
+
+                    // Add connectors for all except the final round
+                    if (roundIndex < tournamentData.bracket.length - 1) {
+                        const connector = document.createElement('div');
+                        connector.className = 'match-connector';
+                        matchupContainer.appendChild(connector);
+
+                        // Add vertical connectors for even matchups
+                        if (matchIndex % 2 === 0) {
+                            const verticalConnector = document.createElement('div');
+                            verticalConnector.className = 'vertical-connector top-connector';
+                            matchupContainer.appendChild(verticalConnector);
+                        } else {
+                            const verticalConnector = document.createElement('div');
+                            verticalConnector.className = 'vertical-connector bottom-connector';
+                            matchupContainer.appendChild(verticalConnector);
+                        }
+                    }
+
+                    roundEl.appendChild(matchupContainer);
+                });
+
+                elements.bracketView.appendChild(roundEl);
+            });
+
+            // If we have a champion, display it prominently
+            const finalMatch = tournamentData.bracket[tournamentData.bracket.length - 1][0];
+            if (finalMatch && finalMatch.winner) {
+                const winnerEl = document.createElement('div');
+                winnerEl.className = 'final-winner';
+                winnerEl.textContent = `Champion: ${finalMatch.winner.title}`;
+                elements.winnerDisplay.innerHTML = '';
+                elements.winnerDisplay.appendChild(winnerEl);
+            } else {
+                elements.winnerDisplay.innerHTML = '';
+            }
+        }
+
+        function selectWinner(matchId, winner) {
+            // Find the match
+            let match = null;
+            let roundIndex = 0;
+            let matchIndex = 0;
+
+            for (let r = 0; r < tournamentData.bracket.length; r++) {
+                for (let m = 0; m < tournamentData.bracket[r].length; m++) {
+                    if (tournamentData.bracket[r][m].id === matchId) {
+                        match = tournamentData.bracket[r][m];
+                        roundIndex = r;
+                        matchIndex = m;
+                        break;
+                    }
+                }
+                if (match) break;
+            }
+
+            if (!match) return;
+
+            // Don't allow winner selection if both teams aren't present
+            if (!match.team1 || !match.team2) return;
+
+            // Check if this is changing an existing winner
+            const hadPreviousWinner = match.winner !== null;
+
+            // Set winner for this match
+            match.winner = winner;
+
+            // If this wasn't the final match, advance winner to next round
+            if (roundIndex < tournamentData.bracket.length - 1) {
+                const nextRoundMatchIndex = Math.floor(matchIndex / 2);
+                const nextMatch = tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex];
+
+                // Determine if this winner goes into team1 or team2 slot
+                if (matchIndex % 2 === 0) {
+                    nextMatch.team1 = winner;
+                    // If we're changing winners and the next match has a winner, reset it
+                    if (hadPreviousWinner && nextMatch.winner) {
+                        resetSubsequentMatches(roundIndex + 1, nextRoundMatchIndex);
+                    }
+                } else {
+                    nextMatch.team2 = winner;
+                    // If we're changing winners and the next match has a winner, reset it
+                    if (hadPreviousWinner && nextMatch.winner) {
+                        resetSubsequentMatches(roundIndex + 1, nextRoundMatchIndex);
+                    }
+                }
+            }
+
+            // Update match completion counter if this is a new winner
+            if (!hadPreviousWinner) {
+                tournamentData.matchesCompleted++;
+            }
+
+            // Re-render the bracket
+            renderBracket();
+
+            // Update progress
+            updateProgress();
+
+            // If all matches are complete, prepare results
+            if (tournamentData.matchesCompleted === tournamentData.totalMatches) {
+                prepareResults();
+            }
+        }
+
+        function resetSubsequentMatches(roundIndex, matchIndex) {
+            // Reset the current match
+            tournamentData.bracket[roundIndex][matchIndex].winner = null;
+            tournamentData.matchesCompleted--;
+
+            // If not the final round, reset all subsequent matches too
+            if (roundIndex < tournamentData.bracket.length - 1) {
+                const nextRoundMatchIndex = Math.floor(matchIndex / 2);
+
+                // Only continue if this match had already propagated forward
+                if (matchIndex % 2 === 0) {
+                    if (tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].team1) {
+                        tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].team1 = null;
+
+                        // If this match had a winner, continue the cascade
+                        if (tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].winner) {
+                            resetSubsequentMatches(roundIndex + 1, nextRoundMatchIndex);
+                        }
+                    }
+                } else {
+                    if (tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].team2) {
+                        tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].team2 = null;
+
+                        // If this match had a winner, continue the cascade
+                        if (tournamentData.bracket[roundIndex + 1][nextRoundMatchIndex].winner) {
+                            resetSubsequentMatches(roundIndex + 1, nextRoundMatchIndex);
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateProgress() {
+            const progressPercentage = tournamentData.totalMatches > 0
+                ? Math.round((tournamentData.matchesCompleted / tournamentData.totalMatches) * 100)
+                : 0;
+
+            elements.bracketProgress.style.width = `${progressPercentage}%`;
+            elements.bracketProgress.textContent = `${progressPercentage}%`;
+        }
+
+        function prepareResults() {
+            // Track each item's performance
+            const itemStats = {};
+
+            // Initialize stats for all items
+            tournamentData.items.forEach(item => {
+                itemStats[item.id] = {
+                    id: item.id,
+                    title: item.title,
+                    seed: item.seed,
+                    roundsWon: 0,
+                    eliminated: false,
+                    eliminatedInRound: -1
+                };
+            });
+
+            // Analyze each round to calculate rounds won and elimination info
+            tournamentData.bracket.forEach((round, roundIndex) => {
+                round.forEach(match => {
+                    if (match.winner) {
+                        // Increment rounds won for the winner
+                        itemStats[match.winner.id].roundsWon++;
+
+                        // Mark loser as eliminated in this round
+                        if (match.team1 && match.team2) {
+                            const loserId = match.winner.id === match.team1.id ? match.team2.id : match.team1.id;
+                            itemStats[loserId].eliminated = true;
+                            itemStats[loserId].eliminatedInRound = roundIndex;
+                        }
+                    }
+                });
+            });
+
+            // Convert to array and sort for rankings
+            // Champion first, then by rounds won, then by initial seed
+            const results = Object.values(itemStats).sort((a, b) => {
+                // Champion always first
+                if (!a.eliminated) return -1;
+                if (!b.eliminated) return 1;
+
+                // Sort by rounds won (descending)
+                if (a.roundsWon !== b.roundsWon) {
+                    return b.roundsWon - a.roundsWon;
+                }
+
+                // If eliminated in same round, lower seed (better initial ranking) gets priority
+                if (a.eliminatedInRound === b.eliminatedInRound) {
+                    return a.seed - b.seed;
+                }
+
+                // Sort by round eliminated (descending)
+                return b.eliminatedInRound - a.eliminatedInRound;
+            });
+
+            // Store results in tournament data
+            tournamentData.results = results;
+
+            // Update results display
+            updateResults();
+        }
+
+        function updateResults() {
+            // Clear previous results
+            elements.resultsTable.innerHTML = '';
+
+            // Only show results if we have them
+            if (tournamentData.results && tournamentData.results.length > 0) {
+                tournamentData.results.forEach((item, index) => {
+                    const row = document.createElement('tr');
+
+                    // Rank
+                    const rankCell = document.createElement('td');
+                    rankCell.textContent = index + 1;
+                    row.appendChild(rankCell);
+
+                    // Item title
+                    const titleCell = document.createElement('td');
+                    titleCell.innerHTML = `<span class="seed">${item.seed}</span> ${item.title}`;
+                    if (index === 0) {
+                        titleCell.innerHTML += ' 🏆';
+                    }
+                    row.appendChild(titleCell);
+
+                    // Rounds won
+                    const roundsCell = document.createElement('td');
+                    roundsCell.textContent = item.roundsWon;
+                    row.appendChild(roundsCell);
+
+                    elements.resultsTable.appendChild(row);
+                });
+
+                // Show champion prominently if we have one
+                if (tournamentData.bracket[tournamentData.bracket.length - 1][0].winner) {
+                    const winnerEl = document.createElement('div');
+                    winnerEl.className = 'final-winner';
+                    winnerEl.textContent = `Champion: ${tournamentData.results[0].title}`;
+                    elements.winnerDisplay.innerHTML = '';
+                    elements.winnerDisplay.appendChild(winnerEl);
+                }
+            } else {
+                elements.winnerDisplay.innerHTML = '<p>Complete the tournament to see results.</p>';
+            }
+        }
+
+        // Load saved tournament data if available
+        function loadSavedTournament() {
+            const savedData = localStorage.getItem('itemTournament');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    tournamentData = parsed;
+
+                    // Update UI elements with saved data
+                    elements.tournamentName.value = tournamentData.name;
+                    elements.seedingMethod.value = tournamentData.seeding;
+                    elements.bracketSize.value = tournamentData.bracketSize;
+
+                    // Update item list
+                    updateItemList();
+
+                    // Render bracket if it exists
+                    if (tournamentData.bracket && tournamentData.bracket.length > 0) {
+                        renderBracket();
+                        updateProgress();
+                    }
+
+                    alert('Saved tournament loaded successfully!');
+                } catch (e) {
+                    console.error('Error loading saved tournament:', e);
+                }
+            }
+        }
+
+        // Initialize on page load
+        function initialize() {
+            // Update bracket size display
+            tournamentData.bracketSize = parseInt(elements.bracketSize.value);
+            elements.requiredCount.textContent = tournamentData.bracketSize;
+
+            // Add keypress event for item input
+            elements.itemInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.addItemBtn.click();
+                }
+            });
+
+            // Check for saved data
+            loadSavedTournament();
+        }
+
+        // Run initialization
+        initialize();
+
+        // Sample data for testing
+        function loadSampleData() {
+            const sampleItems = [
+                { title: "The Shawshank Redemption", imageUrl: "https://example.com/shawshank.jpg" },
+                { title: "The Godfather", imageUrl: "https://example.com/godfather.jpg" },
+                { title: "The Dark Knight", imageUrl: "https://example.com/darkknight.jpg" },
+                "Pulp Fiction",
+                "Fight Club",
+            ];
+
+            // Clear existing items
+            tournamentData.items = [];
+
+            // Add sample items
+            sampleItems.forEach(item => {
+                if (typeof item === 'string') {
+                    addItem(item);
+                } else {
+                    addItem(item.title, item.imageUrl);
+                }
+            });
+
+            alert(`${sampleItems.length} sample items added!`);
+        }
+
+        // Add sample data button (for development/demo purposes)
+        const devControls = document.createElement('div');
+        devControls.style.marginTop = '20px';
+        devControls.style.textAlign = 'center';
+
+        const sampleDataBtn = document.createElement('button');
+        sampleDataBtn.textContent = 'Load Sample Items';
+        sampleDataBtn.style.maxWidth = '200px';
+        sampleDataBtn.addEventListener('click', loadSampleData);
+
+        devControls.appendChild(sampleDataBtn);
+        elements.itemList.parentNode.appendChild(devControls);
+    </script>
+</body>
+
+</html>
